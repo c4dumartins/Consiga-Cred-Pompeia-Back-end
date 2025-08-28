@@ -1,0 +1,26 @@
+{
+  "name": "consiga-cred-pompeia-back-end",
+  "version": "1.0.0",
+  "description": "O projeto Consiga Cred Pompéia – Back-end visa otimizar processos internos e integrar sistemas para dar mais agilidade e confiabilidade às operações de crédito.",
+  "main": "index.js",
+  
+  "scripts": {
+  "dev": "nodemon index.js",
+  "start": "node index.js",
+  "test": "echo \"Error: no test specified\" && exit 1"
+},
+
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/c4dumartins/Consiga-Cred-Pompeia-Back-end.git"
+  },
+  "author": "Thspli",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/c4dumartins/Consiga-Cred-Pompeia-Back-end/issues"
+  },
+  "homepage": "https://github.com/c4dumartins/Consiga-Cred-Pompeia-Back-end#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
