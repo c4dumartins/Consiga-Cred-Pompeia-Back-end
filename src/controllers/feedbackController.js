@@ -1,52 +1,77 @@
+const db = require("../../db");
+
 exports.getAllFeedback = async (req, res) => {
-    try {
-      const results = await db.query("SELECT * FROM feedback ORDER BY created_at DESC");
+  try {
+    db.query("SELECT * FROM feedback ORDER BY created_at DESC", (err, results) => {
+      if (err) {
+        console.error("Erro ao buscar feedbacks:", err);
+        return res.status(500).json({ error: err.message });
+      }
       res.json(results);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    });
+  } catch (err) {
+    console.error("Erro no getAllFeedback:", err);
+    res.status(500).json({ error: err.message });
   }
+};
 
 exports.createFeedback = async (req, res) => {
-    const { name, email, message, user_id } = req.body;
-    if (!name || !email || !message || !user_id) {
-      return res.status(400).json({ error: "Todos os campos são obrigatórios" });
-    }
-
-    try {
-      const results = await db.query(
-        "INSERT INTO feedback (name, email, message, user_id) VALUES (?, ?, ?, ?)",
-        [name, email, message, user_id]
-      );
-      res.status(201).json({
-        id: results.insertId,
-        name,
-        email,
-        message,
-        user_id,
-        created_at: new Date()
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+  const { name, email, message, user_id } = req.body;
+  
+  if (!name || !email || !message || !user_id) {
+    return res.status(400).json({ error: "Todos os campos são obrigatórios" });
   }
 
-  exports.deleteFeedback = async (req, res) => {
-    const { id } = req.params;
-    const { user_id } = req.body;
-
-    if (!user_id) return res.status(400).json({ error: "user_id é obrigatório" });
-
-    try {
-      const results = await db.query(
-        "DELETE FROM feedback WHERE id = ? AND user_id = ?",
-        [id, user_id]
-      );
-      if (results.affectedRows === 0) {
-        return res.status(404).json({ error: "Feedback não encontrado ou não autorizado" });
+  try {
+    db.query(
+      "INSERT INTO feedback (name, email, message, user_id) VALUES (?, ?, ?, ?)",
+      [name, email, message, user_id],
+      (err, results) => {
+        if (err) {
+          console.error("Erro ao criar feedback:", err);
+          return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({
+          id: results.insertId,
+          name,
+          email,
+          message,
+          user_id,
+          created_at: new Date()
+        });
       }
-      res.status(204).send();
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    );
+  } catch (err) {
+    console.error("Erro no createFeedback:", err);
+    res.status(500).json({ error: err.message });
   }
+};
+
+exports.deleteFeedback = async (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: "user_id é obrigatório" });
+  }
+
+  try {
+    db.query(
+      "DELETE FROM feedback WHERE id = ? AND user_id = ?",
+      [id, user_id],
+      (err, results) => {
+        if (err) {
+          console.error("Erro ao deletar feedback:", err);
+          return res.status(500).json({ error: err.message });
+        }
+        if (results.affectedRows === 0) {
+          return res.status(404).json({ error: "Feedback não encontrado ou não autorizado" });
+        }
+        res.status(204).send();
+      }
+    );
+  } catch (err) {
+    console.error("Erro no deleteFeedback:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
