@@ -4,6 +4,7 @@ const feedbackRoutes = require("./src/routes/feedbacks"); // aponta para sua pas
 
 const app = express();
 app.use(cors());
+app.use(cors());
 app.use(express.json());
 
 app.use("/feedbacks", feedbackRoutes);
