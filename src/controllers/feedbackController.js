@@ -56,18 +56,38 @@ exports.deleteFeedback = async (req, res) => {
   }
 
   try {
+    // Verifica se é admin
     db.query(
-      "DELETE FROM feedback WHERE id = ? AND user_id = ?",
-      [id, user_id],
-      (err, results) => {
+      "SELECT 1 FROM admins WHERE user_id = ?",
+      [user_id],
+      (err, adminResults) => {
         if (err) {
-          console.error("Erro ao deletar feedback:", err);
+          console.error("Erro ao verificar admin:", err);
           return res.status(500).json({ error: err.message });
         }
-        if (results.affectedRows === 0) {
-          return res.status(404).json({ error: "Feedback não encontrado ou não autorizado" });
-        }
-        res.status(204).send();
+
+        const isAdmin = adminResults.length > 0;
+
+        // Se for admin, deleta qualquer feedback
+        // Se não for, só deleta o próprio
+        const query = isAdmin
+          ? "DELETE FROM feedback WHERE id = ?"
+          : "DELETE FROM feedback WHERE id = ? AND user_id = ?";
+
+        const params = isAdmin ? [id] : [id, user_id];
+
+        db.query(query, params, (err, results) => {
+          if (err) {
+            console.error("Erro ao deletar feedback:", err);
+            return res.status(500).json({ error: err.message });
+          }
+          if (results.affectedRows === 0) {
+            return res.status(403).json({
+              error: "Feedback não encontrado ou sem permissão",
+            });
+          }
+          res.status(204).send();
+        });
       }
     );
   } catch (err) {
