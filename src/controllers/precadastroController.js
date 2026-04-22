@@ -2,7 +2,7 @@
 //  src/controllers/precadastroController.js
 // ============================================================
 const nodemailer = require("nodemailer");
-const { emailEmpresa, emailCliente } = require("../emailTemplates");
+const { emailEmpresa } = require("../emailTemplates");
 
 // Transporter criado uma única vez (reutilizado em todas as chamadas)
 const transporter = nodemailer.createTransport({
@@ -26,8 +26,8 @@ transporter.verify((error) => {
 exports.enviarPreCadastro = async (req, res) => {
   const dados = req.body;
 
-  // Validação dos campos obrigatórios
-  const obrigatorios = ["nome", "email", "telefone", "cpf", "tipoConsorcio", "valorDesejado", "prazo"];
+  // Validação dos campos obrigatórios (alinhada com o novo formulário)
+  const obrigatorios = ["nome", "telefone", "cpf", "modalidade", "renda"];
   const faltando = obrigatorios.filter((c) => !dados[c]);
 
   if (faltando.length > 0) {
@@ -38,53 +38,28 @@ exports.enviarPreCadastro = async (req, res) => {
   }
 
   try {
-    // E-mail 1: Para a EMPRESA
+    // E-mail apenas para a EMPRESA
     const paraEmpresa = {
       from: `"ConsigaCred — Site" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_EMPRESA,
-      replyTo: dados.email,
-      subject: `🏦 Novo Pré-Cadastro: ${dados.nome} — ${dados.tipoConsorcio}`,
+      replyTo: dados.email || process.env.EMAIL_USER,
+      subject: `🏦 Nova Simulação: ${dados.nome} — ${dados.modalidade}`,
       html: emailEmpresa(dados),
     };
 
-    // E-mail 2: Para o CLIENTE
-    const paraCliente = {
-      from: `"ConsigaCred" <${process.env.EMAIL_USER}>`,
-      to: dados.email,
-      subject: "✅ Seu Pré-Cadastro foi Recebido — ConsigaCred",
-      html: emailCliente(dados),
-    };
+    const resEmpresa = await transporter.sendMail(paraEmpresa);
 
-    // Dispara os dois e-mails em paralelo
-    const [resEmpresa, resCliente] = await Promise.allSettled([
-      transporter.sendMail(paraEmpresa),
-      transporter.sendMail(paraCliente),
-    ]);
-
-    // Log detalhado no terminal
-    console.log(`\n📩 Pré-Cadastro: ${dados.nome} <${dados.email}>`);
-    console.log(`   ${resEmpresa.status === "fulfilled" ? "✅" : "❌"} E-mail empresa → ${process.env.EMAIL_EMPRESA}`);
-    console.log(`   ${resCliente.status  === "fulfilled" ? "✅" : "❌"} E-mail cliente → ${dados.email}`);
-
-    if (resEmpresa.status === "rejected") {
-      console.error("   Detalhe empresa:", resEmpresa.reason?.message);
-      // E-mail da empresa é crítico — retorna erro para o frontend
-      return res.status(500).json({ error: "Falha ao processar o cadastro. Tente novamente." });
-    }
-
-    if (resCliente.status === "rejected") {
-      console.error("   Detalhe cliente:", resCliente.reason?.message);
-      // E-mail do cliente falhou mas o da empresa chegou — retorna sucesso parcial
-    }
+    console.log(`\n📩 Nova Simulação: ${dados.nome}`);
+    console.log(`   ✅ E-mail empresa → ${process.env.EMAIL_EMPRESA}`);
+    console.log(`   ID: ${resEmpresa.messageId}`);
 
     return res.status(200).json({
       success: true,
-      message: "Pré-cadastro enviado com sucesso!",
-      emailCliente: resCliente.status === "fulfilled" ? "enviado" : "falhou",
+      message: "Simulação enviada com sucesso!",
     });
 
   } catch (err) {
-    console.error("❌ Erro inesperado em enviarPreCadastro:", err.message);
-    return res.status(500).json({ error: "Erro interno. Tente novamente." });
+    console.error("❌ Erro ao enviar e-mail da empresa:", err.message);
+    return res.status(500).json({ error: "Falha ao processar a simulação. Tente novamente." });
   }
 };
