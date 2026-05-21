@@ -50,7 +50,7 @@ function emailEmpresa(dados) {
     // Passo 2 — Endereço
     cep, logradouro, numero, complemento, bairro, cidade, estado,
     // Passo 3 — Simulação
-    modalidade, renda, comoConheceu, mensagem,
+    modalidade, renda, comoConheceu, mensagem, possuiContaEnergia,
   } = dados;
 
   const dataFormatada = new Date().toLocaleString("pt-BR", {
@@ -120,8 +120,11 @@ function emailEmpresa(dados) {
       letter-spacing:2px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
       💰 Dados da Simulação
     </h2>
-    ${campoLinha("Modalidade",     traduzir(MODALIDADES,   modalidade))}
-    ${campoLinha("Renda Líquida",  renda ? `R$ ${renda}` : null)}
+    ${campoLinha("Modalidade", traduzir(MODALIDADES, modalidade))}
+    ${modalidade === 'energia'
+      ? campoLinha("Possui conta de energia em seu nome?", possuiContaEnergia === true || possuiContaEnergia === 'sim' ? 'Sim' : 'Não')
+      : campoLinha("Renda Líquida", renda ? `R$ ${renda}` : null)
+    }
     ${campoLinha("Como nos conheceu", traduzir(COMO_CONHECEU, comoConheceu))}
     ${mensagem ? `
     <div style="margin-top:14px;">
